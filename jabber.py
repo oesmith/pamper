@@ -2,6 +2,10 @@ from wokkel.xmppim import MessageProtocol, AvailablePresence
 from twisted.words.xish import domish
 
 class JabberBot(MessageProtocol):
+    """A really simple XMPP client that passes incoming messages to the
+    campfire bot and sends messages passed to it by the campfire bot.
+    
+    """
     def __init__(self, forward_to):
         self.campfire = None
         self.forward_to = forward_to
@@ -16,7 +20,8 @@ class JabberBot(MessageProtocol):
 
     def onMessage(self, msg):
         print msg['from']
-        if msg["type"] == 'chat' and hasattr(msg, "body") and msg.body and self.campfire:
+        if msg["type"] == 'chat' and hasattr(msg, "body") and msg.body and \
+           msg['from'].startswith(self.forward_to) and self.campfire:
             self.campfire.forwardMessage(str(msg.body))
     
     def forwardMessage(self, body):

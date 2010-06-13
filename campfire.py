@@ -14,6 +14,9 @@ except ImportError:
 
 
 class CampfireBot(object):
+    """This is where all the actual message handling takes place.
+    
+    """
     def __init__(self, subdomain, room_name, token, ssl=False):
         self.campfire = Campfire(subdomain, token, ssl)
         self.room = self.campfire.find_room_by_name(room_name)
