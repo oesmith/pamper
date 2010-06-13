@@ -1,0 +1,5 @@
+*.pyc
+twistd.log
+twistd.pid
+pip-log.txt
+config.yaml
