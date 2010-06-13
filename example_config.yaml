@@ -1,0 +1,9 @@
+deliver_to: my_jid@xmpp-server.com
+campfire:
+    ssl: false
+    domain: my_campfire_subdomain
+    token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    room: My Room
+jabber:
+    pass: bot_password
+    user: bot_jid@xmpp-server.com

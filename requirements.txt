@@ -1,0 +1,8 @@
+PyYAML==3.09
+Twisted==10.0.0
+distribute==0.6.10
+httplib2==0.6.0
+-e git+http://github.com/rhymes/pinder.git@0a34823adbf8f574e8a4d1467db155b72e8b07d3#egg=pinder-0.8b-py2.6-dev
+wokkel==0.6.3
+wsgiref==0.1.2
+zope.interface==3.6.1
