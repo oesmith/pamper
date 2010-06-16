@@ -20,6 +20,8 @@ jabberBot = JabberBot(config['deliver_to'])
 jabberBot.setHandlerParent(xmppClient)
 xmppClient.setServiceParent(application)
 
+print config
+
 # setup the campfire bot
 campfireBot = CampfireBot(config['campfire']['domain'], 
                           config['campfire']['room'], 

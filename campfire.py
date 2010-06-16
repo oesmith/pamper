@@ -45,7 +45,7 @@ class CampfireBot(object):
             # skip my own messages
             return
         fwd_msg = None
-        user = 'user_id' in msg and self.get_user(msg['user_id']) or None
+        user = ('user_id' in msg and msg['user_id'] is not None) and self.get_user(msg['user_id']) or None
         if msg['type'] == 'TextMessage':
             fwd_msg = "%s: %s" % (user['user']['name'], msg['body'])
         elif msg['type'] == 'LeaveMessage':
@@ -81,7 +81,7 @@ class CampfireBot(object):
 
 
 class CampfireStreamProtocol(basic.LineReceiver):
-    delimiter = "\r\n"
+    delimiter = "\r"
 
     def __init__(self):
         self.in_header = True
@@ -117,6 +117,9 @@ class CampfireStreamProtocol(basic.LineReceiver):
                 pass
 
     def rawDataReceived(self, data):
+        if len(data.strip()):
+            print data
+
         if self.status_size is not None:
             data, extra = data[:self.status_size], data[self.status_size:]
             self.status_size -= len(data)
@@ -125,13 +128,14 @@ class CampfireStreamProtocol(basic.LineReceiver):
 
         self.status_data += data
         if self.status_size == 0:
-            try:
-                # ignore newline keep-alive
-                msg = _json.loads(self.status_data)
-            except:
-                pass
-            else:
-                self.factory.consumer.messageReceived(msg)
+            for data_line in self.status_data.split(self.delimiter):
+                try:
+                    # ignore newline keep-alive
+                    msg = _json.loads(data_line)
+                except:
+                    pass
+                else:
+                    self.factory.consumer.messageReceived(msg)
             self.status_data = ""
             self.status_size = None
             self.setLineMode(extra)
