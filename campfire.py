@@ -48,7 +48,7 @@ class CampfireBot(object):
         user = ('user_id' in msg and msg['user_id'] is not None) and self.get_user(msg['user_id']) or None
         if msg['type'] == 'TextMessage':
             fwd_msg = "%s: %s" % (user['user']['name'], msg['body'])
-        elif msg['type'] == 'LeaveMessage':
+        elif msg['type'] == 'LeaveMessage' or msg['type'] == 'KickMessage':
             fwd_msg = "- %s has left the room" % user['user']['name']
         elif msg['type'] == 'EnterMessage':
             fwd_msg = "- %s has entered the room" % user['user']['name']
