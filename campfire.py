@@ -74,10 +74,25 @@ class CampfireBot(object):
             raise RuntimeError("not connected")
     
     def forwardMessage(self, msg):
-        if '\n' in msg:
-            self.room.paste(msg)
+        if msg[0] == "!":
+            fwd_msg = "Unknown command"
+            if msg == "!users":
+                room = self.campfire.room(self.room.id)
+                users = ', '.join([u['name'] for u in room.data['users']])
+                fwd_msg = "Active users: %s" % users
+            elif msg == "!uploads":
+                files = self.room.uploads()
+                file_str = '\n'.join([f['full_url'].replace(' ', '%20') for f in files])
+                fwd_msg = "Uploaded files:\n%s" % file_str
+            elif msg == "!room":
+                fwd_msg = "Room URL: %s/room/%d" % (self.campfire.uri.geturl(),
+                                                    self.room.id)
+            self.xmpp.forwardMessage("# %s" % fwd_msg)
         else:
-            self.room.speak(msg)
+            if '\n' in msg:
+                self.room.paste(msg)
+            else:
+                self.room.speak(msg)
 
 
 class CampfireStreamProtocol(basic.LineReceiver):
