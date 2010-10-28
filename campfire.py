@@ -2,6 +2,7 @@ import base64
 from datetime import date
 from twisted.protocols import basic
 from twisted.internet import protocol
+from twisted.internet.task import LoopingCall
 from pinder import Campfire
 
 try:
@@ -27,6 +28,7 @@ class CampfireBot(object):
         if not self.room:
             raise RuntimeError("Could not find room %s" % room)
         self.users = {}
+        self.joined = False
 
     def connectionMade(self):
         print "connectionMade"
@@ -99,10 +101,10 @@ class CampfireBot(object):
                 fwd_msg = "Room URL: %s/room/%d" % (self.campfire.uri.geturl(),
                                                     self.room.id)
             elif msg == "!leave":
-                self.room.leave()
+                self.leave()
                 fwd_msg = "Left room"
             elif msg == "!join":
-                self.room.join()
+                self.join()
                 fwd_msg = "Joined room"
             elif msg == "!transcript":
                 today = date.today()
@@ -118,6 +120,19 @@ class CampfireBot(object):
             else:
                 self.room.speak(msg)
 
+    def join():
+        if self.room and not self.joined:
+            self.joined = True
+            self.room.join()
+    
+    def leave():
+        if self.room and self.joined:
+            self.joined = False
+            self.room.leave()
+    
+    def keepAlive():
+        if self.room and self.joined:
+            self.room.join()
 
 class CampfireStreamProtocol(basic.LineReceiver):
     delimiter = "\r"
@@ -183,6 +198,8 @@ class CampfireStreamProtocol(basic.LineReceiver):
 class CampfireStreamFactory(protocol.ReconnectingClientFactory):
     maxDelay = 120
     protocol = CampfireStreamProtocol
+    keepAliveInterval = 300
+    keepAliveLoopingCall = None
 
     def __init__(self, consumer):
         if isinstance(consumer, CampfireBot):
@@ -191,7 +208,6 @@ class CampfireStreamFactory(protocol.ReconnectingClientFactory):
             raise TypeError("consumer should be an instance of CampfireBot")
     
     def startFactory(self):
-        self.consumer.room.join()
         # generate the HTTP headers
         auth = base64.encodestring("%s:x" % self.consumer.auth_token).strip()
         header = [
@@ -201,7 +217,11 @@ class CampfireStreamFactory(protocol.ReconnectingClientFactory):
             "Host: streaming.campfirenow.com",
         ]
         self.header = "\r\n".join(header) + "\r\n\r\n"
+        # join the room and start the keepalive timer
+        self.consumer.join()
+        self.keepAliveLoopingCall = LoopingCall(self.consumer.keepAlive)
+        self.keepAliveLoopingCall.start(self.keepAliveInterval)
     
     def stopFactory(self):
-        if self.consumer.room:
-            self.consumer.room.leave()
+        self.keepAliveLoopingCall.stop()
+        self.consumer.leave()
