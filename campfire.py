@@ -120,17 +120,17 @@ class CampfireBot(object):
             else:
                 self.room.speak(msg)
 
-    def join():
+    def join(self):
         if self.room and not self.joined:
             self.joined = True
             self.room.join()
     
-    def leave():
+    def leave(self):
         if self.room and self.joined:
             self.joined = False
             self.room.leave()
     
-    def keepAlive():
+    def keepAlive(self):
         if self.room and self.joined:
             self.room.join()
 
