@@ -22,7 +22,7 @@ class JabberBot(MessageProtocol):
         print msg['from']
         if msg["type"] == 'chat' and hasattr(msg, "body") and msg.body and \
            msg['from'].startswith(self.forward_to) and self.campfire:
-            self.campfire.forwardMessage(str(msg.body))
+            self.campfire.forwardMessage(unicode(msg.body))
     
     def forwardMessage(self, body):
         msg = domish.Element((None, "message"))

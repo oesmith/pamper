@@ -1,4 +1,5 @@
 import base64
+from datetime import date
 from twisted.protocols import basic
 from twisted.internet import protocol
 from pinder import Campfire
@@ -37,13 +38,11 @@ class CampfireBot(object):
         if user_id in self.users:
             return self.users[user_id]
         else:
-            return self.campfire.user(user_id)
+            u = self.campfire.user(user_id)
+            self.users[user_id] = u
+            return u
 
-    def messageReceived(self, msg):
-        print unicode(msg)
-        if 'user_id' in msg and msg['user_id'] == self.me['id']:
-            # skip my own messages
-            return
+    def formatMessage(self, msg):
         fwd_msg = None
         user = ('user_id' in msg and msg['user_id'] is not None) and self.get_user(msg['user_id']) or None
         if msg['type'] == 'TextMessage':
@@ -56,11 +55,23 @@ class CampfireBot(object):
             fwd_msg = "- %s pasted:\n%s" % (user['user']['name'], msg['body'])
         elif msg['type'] == 'UploadMessage':
             fwd_msg = "- %s uploaded %s" % (user['user']['name'], msg['body'])
-        if fwd_msg:
-            if self.xmpp:
-                self.xmpp.forwardMessage(fwd_msg)
-            else:
-                print fwd_msg
+        elif msg['type'] == 'TimestampMessage':
+            fwd_msg = "- timestamp %s" % (msg['created_at'])
+        return fwd_msg
+
+    def messageReceived(self, msg):
+        print unicode(msg)
+        if 'user_id' in msg and msg['user_id'] == self.me['id']:
+            # skip my own messages
+            if msg['type'] in ('TextMessage', 'PasteMessage'):
+                return
+        if msg['type'] in ('TextMessage', 'LeaveMessage', 'KickMessage', 'EnterMessage', 'PasteMessage', 'UploadMessage'):
+            fwd_msg = self.formatMessage(msg)
+            if fwd_msg:
+                if self.xmpp:
+                    self.xmpp.forwardMessage(fwd_msg)
+                else:
+                    print fwd_msg
 
     def _registerProtocol(self, protocol):
         self._streamProtocol = protocol
@@ -87,6 +98,19 @@ class CampfireBot(object):
             elif msg == "!room":
                 fwd_msg = "Room URL: %s/room/%d" % (self.campfire.uri.geturl(),
                                                     self.room.id)
+            elif msg == "!leave":
+                self.room.leave()
+                fwd_msg = "Left room"
+            elif msg == "!join":
+                self.room.join()
+                fwd_msg = "Joined room"
+            elif msg == "!transcript":
+                today = date.today()
+                fwd_msg = "Transcript URL: %s/room/%d/transcript/%04d/%02d/%02d" % (self.campfire.uri.geturl(),
+                                                                                    self.room.id,
+                                                                                    today.year,
+                                                                                    today.month,
+                                                                                    today.day)
             self.xmpp.forwardMessage("# %s" % fwd_msg)
         else:
             if '\n' in msg:
