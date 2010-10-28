@@ -1,5 +1,5 @@
 from twisted.application import service
-from twisted.application.internet import TCPClient, SSLClient
+from twisted.application.internet import TCPClient, SSLClient, TimerService
 from twisted.words.protocols.jabber import jid
 from wokkel.client import XMPPClient
 import yaml
@@ -41,3 +41,9 @@ campfireClientService.setServiceParent(application)
 # point the bots at each other
 jabberBot.campfire = campfireBot
 campfireBot.xmpp = jabberBot
+
+# make a timerservice that keeps the connection alive
+def keepAlive():
+    campfireBot.room.join()
+ts = TimerService(300, keepAlive)
+ts.setServiceParent(application)
